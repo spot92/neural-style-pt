@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
-
+#Changes made between short to long segments of ####
+#Some things say Deleted:
 from PIL import Image
 from CaffeLoader import loadCaffemodel, ModelParallel
 
@@ -60,6 +61,13 @@ def main():
     cnn, layerList = loadCaffemodel(params.model_file, params.pooling, params.gpu, params.disable_check)
 
     content_image = preprocess(params.content_image, params.image_size).type(dtype)
+
+
+    #####################################################
+    Ch = content_image.size(2) #literally no idea why its (2) and not [0]
+    Cw = content_image.size(3) #literally no idea why its (3) and not [1]
+    #################################################################
+    
     style_image_input = params.style_image.split(',')
     style_image_list, ext = [], [".jpg", ".jpeg", ".png", ".tiff"]
     for image in style_image_input:
@@ -71,7 +79,40 @@ def main():
             style_image_list.append(image)
     style_images_caffe = []
     for image in style_image_list:
-        style_size = int(params.image_size * params.style_scale)
+        #################################################
+        image_path = 'D:/Neural Style Python/' + image
+        print(image_path)
+        im_sizing = Image.open(image_path)
+        print(im_sizing)
+        Sh = im_sizing.size[0] #this one is the way I expect it to be, but the Ch is not
+        Sw = im_sizing.size[1] #this one is the way I expect it to be, but the Ch is not
+        style_size = 0
+        resizeStyle = 1
+        Cr = Cw / Ch
+        Sr = Sw / Sh
+
+        if Cr >= Sr:
+            if Sr >= 1:
+                style_size = Cw * params.style_scale
+            else:
+                style_size = params.style_scale * Cw * Sh /Sw
+
+            if style_size > Sw:
+                style_size = Sw
+                resizeStyle = 0
+        else:
+            if Sr >= 1:
+                style_size = params.style_scale * Ch * Sw /Sh
+            else:
+                style_size = Ch * params.style_scale
+
+            if style_size > Sh:
+                style_size = Sh
+                resizeStyle = 0
+        
+        #############################################################
+        #Deleted: style_size = int(params.image_size * params.style_scale)
+        
         img_caffe = preprocess(image, style_size).type(dtype)
         style_images_caffe.append(img_caffe)
 
